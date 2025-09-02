@@ -6,7 +6,7 @@
 - Sebastián Canales - 202273640-2
 - Diego Sierra - 202273531-7
 - Adán Contreras - 202273519-8
-- Joaquín Viveros - 
+- Joaquín Viveros - 202273586-4
 - **Profesor**: Ernesto Vivanco
 
 ## Videos
