@@ -1,0 +1,12 @@
+# Versiones SIN Rust - más fáciles de instalar
+fastapi==0.100.0
+uvicorn==0.23.0
+sqlalchemy==2.0.20
+psycopg2-binary==2.9.7
+python-dotenv==1.0.0
+pydantic==1.10.12
+python-multipart==0.0.6
+
+# Opcional - solo si ROL 1 necesita auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
