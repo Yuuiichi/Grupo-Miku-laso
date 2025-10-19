@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 import os
 from dotenv import load_dotenv
 
@@ -10,7 +9,7 @@ load_dotenv()
 # Formato: postgresql://usuario:password@host:puerto/nombre_bd
 DATABASE_URL = os.getenv(
     "DATABASE_URL",  # ESTO NO VA A FUNCIONAR, EDITAR PARA QUE FUNCIONE CON LA BASE DE DATOS CREADA
-    "postgresql://biblioteca_user:biblioteca_pass@localhost:5432/biblioteca_db"
+    "postgresql://biblioteca_user:biblioteca_pass@localhost:5433/biblioteca_db"
 )
 
 # Crear engine de SQLAlchemy
