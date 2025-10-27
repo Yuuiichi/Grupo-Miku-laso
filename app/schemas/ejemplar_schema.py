@@ -60,3 +60,17 @@ class DisponibilidadResponse(BaseModel):
                 "puede_solicitar": True
             }
         }
+
+
+# Schema para historial
+class HistorialEjemplarResponse(BaseModel):
+    id: int
+    ejemplar_id: int
+    estado_anterior: Optional[str]
+    estado_nuevo: str
+    usuario_id: Optional[int]
+    motivo: Optional[str]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
