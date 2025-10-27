@@ -15,14 +15,14 @@ from app.schemas.ejemplar_schema import (
 from app.utils.auth import get_current_user, require_role
 import random
 import string
-from sqlalchemy import func
+from sqlalchemy import func, case
 from datetime import timedelta, datetime
 from pydantic import BaseModel
 
 
 router = APIRouter(prefix="/ejemplares", tags=["Ejemplares"])
 
-ESTADOS_VALIDOS = ["disponible", "prestado", "en_sala", "devuelto", "mantenimiento", "perdido"]
+ESTADOS_VALIDOS = ["disponible", "prestado", "en_sala", "mantenimiento", "perdido"]
 
 # ============================================
 # CLASES INTERNAS
@@ -172,8 +172,8 @@ async def obtener_reporte_ubicaciones(
     ubicaciones = db.query(
         Ejemplar.ubicacion,
         func.count(Ejemplar.id).label("total"),
-        func.sum(func.case((Ejemplar.estado == "disponible", 1), else_=0)).label("disponibles"),
-        func.sum(func.case((Ejemplar.estado == "prestado", 1), else_=0)).label("prestados")
+        func.sum(case((Ejemplar.estado == "disponible", 1), else_=0)).label("disponibles"),
+        func.sum(case((Ejemplar.estado == "prestado", 1), else_=0)).label("prestados")
     ).group_by(Ejemplar.ubicacion).all()
     
     return {
@@ -289,7 +289,10 @@ async def obtener_alertas(
 # ENDPOINT 6: Listar ejemplares disponibles
 # ============================================
 @router.get("/disponibles", response_model=List[EjemplarResponse])
-def listar_disponibles(documento_id: int = None, db: Session = Depends(get_db)):
+def listar_disponibles(
+    documento_id: int = None,
+    db: Session = Depends(get_db)
+):
     """
     Listar todos los ejemplares disponibles.
     Opcionalmente filtrar por documento_id.
@@ -342,7 +345,6 @@ def obtener_disponibilidad(documento_id: int, db: Session = Depends(get_db)):
         total=len(ejemplares),
         puede_solicitar=disponibles > 0
     )
-    return ejemplares
 
 
 # ============================================
@@ -370,7 +372,7 @@ async def obtener_ejemplares_disponibles_documento(
         Ejemplar.estado == "disponible"
     )
     
-    if cantidad:
+    if cantidad is not None:
         query = query.limit(cantidad)
     
     ejemplares = query.all()
@@ -380,6 +382,7 @@ async def obtener_ejemplares_disponibles_documento(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No hay ejemplares disponibles del documento {documento_id}"
         )
+    return ejemplares
     
 
 # ============================================
@@ -542,7 +545,48 @@ async def validar_disponibilidad_prestamo(
     }
 
 
-# Parte 4
+# ============================================
+# ENDPOINT 14: Listar ejemplares con filtros múltiples
+# ============================================
+@router.get("/", response_model=List[EjemplarResponse])
+async def listar_ejemplares_con_filtros(
+    documento_id: Optional[int] = Query(None, description="Filtrar por documento"),
+    estados: Optional[str] = Query(None, description="Estados separados por coma (ej: disponible,prestado)"),
+    ubicacion: Optional[str] = Query(None, description="Filtrar por ubicación (búsqueda parcial)"),
+    limit: int = Query(100, le=500, description="Límite de resultados"),
+    offset: int = Query(0, description="Offset para paginación"),
+    db: Session = Depends(get_db)
+):
+    """
+    Listar ejemplares con múltiples filtros opcionales.
+    
+    Ejemplos:
+    - GET /ejemplares?estados=disponible,en_sala
+    - GET /ejemplares?documento_id=1&estados=prestado
+    - GET /ejemplares?ubicacion=A3
+    - GET /ejemplares?limit=10&offset=0
+    """
+    query = db.query(Ejemplar)
+    
+    # Filtro por documento
+    if documento_id:
+        query = query.filter(Ejemplar.documento_id == documento_id)
+    
+    # Filtro por estados (múltiples)
+    if estados:
+        lista_estados = [e.strip() for e in estados.split(",")]
+        query = query.filter(Ejemplar.estado.in_(lista_estados))
+    
+    # Filtro por ubicación (búsqueda parcial)
+    if ubicacion:
+        query = query.filter(Ejemplar.ubicacion.ilike(f"%{ubicacion}%"))
+    
+    # Paginación
+    query = query.offset(offset).limit(limit)
+    
+    ejemplares = query.all()
+    return ejemplares
+
 
 # ============================================
 # ENDPOINT 15: Ver historial de cambios de un ejemplar (MEDIANA)
@@ -632,6 +676,8 @@ async def actualizar_estado_ejemplar(
 # ============================================
 # ENDPOINT 8: Actualizar ubicación de ejemplar (NUEVO)
 # ============================================
+
+
 @router.patch("/{ejemplar_id}/ubicacion", response_model=EjemplarResponse)
 async def actualizar_ubicacion(
     ejemplar_id: int,
@@ -658,13 +704,14 @@ async def actualizar_ubicacion(
     return ejemplar
 
 # ============================================
-# ENDPOINT 12: Marcar ejemplar como perdido (FÁCIL)
+# ENDPOINT 12: Marcar ejemplar como perdido
 # ============================================
 @router.patch("/{ejemplar_id}/marcar-perdido", response_model=EjemplarResponse)
 async def marcar_como_perdido(
     ejemplar_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "bibliotecario"]))
+    current_user: Usuario = Depends(require_role(["admin", "bibliotecario"])),
+    motivo: Optional[str] = Query(None, description="Motivo del cambio a perdido")
 ):
     """
     Marcar un ejemplar como perdido.
@@ -678,85 +725,65 @@ async def marcar_como_perdido(
             detail=f"Ejemplar con id {ejemplar_id} no encontrado"
         )
     
+    estado_anterior = ejemplar.estado
     ejemplar.estado = "perdido"
+
+
+    # Registrar en historial
+    historial = HistorialEjemplar(
+        ejemplar_id=ejemplar_id,
+        estado_anterior=estado_anterior,
+        estado_nuevo="perdido",
+        usuario_id=current_user.id,
+        motivo=motivo
+    )
+    db.add(historial)
+
     db.commit()
     db.refresh(ejemplar)
     
     return ejemplar
 
 # ============================================
-# ENDPOINT 13: Recuperar ejemplar perdido (FÁCIL)
+# ENDPOINT 13: Recuperar ejemplar perdido
 # ============================================
+# AFTER
 @router.patch("/{ejemplar_id}/recuperar", response_model=EjemplarResponse)
 async def recuperar_ejemplar(
     ejemplar_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["admin", "bibliotecario"]))
+    current_user: Usuario = Depends(require_role(["admin", "bibliotecario"])),
+    motivo: Optional[str] = Query(None, description="Motivo de la recuperación")
 ):
     """
-    Recuperar un ejemplar que estaba perdido y marcarlo como disponible.
+    Recuperar un ejemplar que estaba perdido, marcarlo como disponible y registrar en historial.
     """
     ejemplar = db.query(Ejemplar).filter(Ejemplar.id == ejemplar_id).first()
-    
     if not ejemplar:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Ejemplar con id {ejemplar_id} no encontrado"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Ejemplar con id {ejemplar_id} no encontrado")
+
     if ejemplar.estado != "perdido":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El ejemplar no está marcado como perdido (estado actual: {ejemplar.estado})"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"El ejemplar no está marcado como perdido (estado actual: {ejemplar.estado})")
+
+    estado_anterior = ejemplar.estado
     ejemplar.estado = "disponible"
+
+    # Registrar en historial
+    historial = HistorialEjemplar(
+        ejemplar_id=ejemplar_id,
+        estado_anterior=estado_anterior,
+        estado_nuevo="disponible",
+        usuario_id=current_user.id,
+        motivo=motivo
+    )
+    db.add(historial)
+
     db.commit()
     db.refresh(ejemplar)
-    
     return ejemplar
 
-# ============================================
-# ENDPOINT 14: Listar ejemplares con filtros múltiples (FÁCIL)
-# ============================================
-@router.get("/", response_model=List[EjemplarResponse])
-async def listar_ejemplares_con_filtros(
-    documento_id: Optional[int] = Query(None, description="Filtrar por documento"),
-    estados: Optional[str] = Query(None, description="Estados separados por coma (ej: disponible,prestado)"),
-    ubicacion: Optional[str] = Query(None, description="Filtrar por ubicación (búsqueda parcial)"),
-    limit: int = Query(100, le=500, description="Límite de resultados"),
-    offset: int = Query(0, description="Offset para paginación"),
-    db: Session = Depends(get_db)
-):
-    """
-    Listar ejemplares con múltiples filtros opcionales.
-    
-    Ejemplos:
-    - GET /ejemplares?estados=disponible,en_sala
-    - GET /ejemplares?documento_id=1&estados=prestado
-    - GET /ejemplares?ubicacion=A3
-    - GET /ejemplares?limit=10&offset=0
-    """
-    query = db.query(Ejemplar)
-    
-    # Filtro por documento
-    if documento_id:
-        query = query.filter(Ejemplar.documento_id == documento_id)
-    
-    # Filtro por estados (múltiples)
-    if estados:
-        lista_estados = [e.strip() for e in estados.split(",")]
-        query = query.filter(Ejemplar.estado.in_(lista_estados))
-    
-    # Filtro por ubicación (búsqueda parcial)
-    if ubicacion:
-        query = query.filter(Ejemplar.ubicacion.ilike(f"%{ubicacion}%"))
-    
-    # Paginación
-    query = query.offset(offset).limit(limit)
-    
-    ejemplares = query.all()
-    return ejemplares
 
 # ============================================
 # FUNCIONES AUXILIARES para otros roles
