@@ -1,40 +1,59 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import settings
-from database import engine, Base
-from routes import auth, admin
+from app.database import create_tables
 
-# Crear tablas
-Base.metadata.create_all(bind=engine)
+# Importar routers
+from app.api import ejemplares
 
+# Crear instancia de FastAPI
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    docs_url="/docs",
-    redoc_url="/redoc"
+    title="Sistema de Biblioteca Municipal - Grupo Miku-laso",
+    description="API Backend para gestión de préstamos de biblioteca",
+    version="1.0.0"
 )
 
-# CORS
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Registrar routers
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(admin.router, prefix=settings.API_V1_STR)
+# Crear tablas al iniciar
+@app.on_event("startup")
+def on_startup():
+    create_tables()
+    print("🚀 API iniciada correctamente")
+
+# Rutas básicas
+@app.get("/")
+def root():
+    return {
+        "message": "API Sistema de Biblioteca Municipal - Grupo Miku-laso",
+        "docs": "/docs",
+        "integrantes": [
+            "Cristóbal Espinoza",
+            "Sebastián Canales", 
+            "Diego Sierra",
+            "Adán Contreras",
+            "Joaquín Viveros"
+        ],
+        "status": "running"
+    }
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "grupo": "Miku-laso"}
 
-@app.get("/")
-def root():
-    return {"message": "API Sistema de Autenticación", "version": settings.VERSION}
+# Registrar router de ejemplares (ROL 3)
+app.include_router(ejemplares.router, prefix="/api")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# Cuando otros roles estén listos, descomentar:
+# from app.api import auth, documentos, prestamos, usuarios, reservas
+# app.include_router(auth.router, prefix="/api")
+# app.include_router(documentos.router, prefix="/api")
+# app.include_router(prestamos.router, prefix="/api")
+# app.include_router(usuarios.router, prefix="/api")
+# app.include_router(reservas.router, prefix="/api")
