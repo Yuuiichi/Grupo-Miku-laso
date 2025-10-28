@@ -9,6 +9,8 @@ from utils.dependencies import verificacion, validacion_categoria
 
 router = APIRouter()
 
+"Endpoint para crear documento en la base de datos"
+
 @router.post("/", response_model=DocumentoOutput)
 async def api_creacion_documentos(
     documento_data: DocumentoCrear, 
@@ -30,6 +32,8 @@ async def api_creacion_documentos(
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error interno al crear el documento: {str(e)}")
 
+
+"Endpoint para realizar un listado de documentos."
 @router.get("/", response_model=ListaDocumentos)
 async def api_listar_documentos(
     page: int = Query(1, ge=1), 
@@ -46,6 +50,11 @@ async def api_listar_documentos(
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error interno al listar documentos: {str(e)}")
 
+
+
+#Endpoint para buscar un documento, recibiendo su ID
+
+
 @router.get("/{documento_id}", response_model=DocumentoOutput)
 async def api_get_documento(documento_id: int):
     """Obtiene un documento por su ID."""
@@ -59,6 +68,9 @@ async def api_get_documento(documento_id: int):
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error interno al buscar documento: {str(e)}")
 
+
+
+"Endpoint para actualizar el documento de la base de datos."
 @router.patch("/{documento_id}", response_model=DocumentoOutput)
 async def api_actualizar_documento(
     documento_id: int, 

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import documentos, catalogo
+from app.routes import documentos, catalogo
 
 app = FastAPI()
 

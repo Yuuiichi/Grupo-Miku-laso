@@ -9,6 +9,9 @@ from models import catalogo_model # Importamos desde 'models'
 router = APIRouter() # Para /catalogo
 router_categorias = APIRouter() # Para /categorias
 
+
+"Endpoint para realizar la busqueda básica de un documento"
+""
 @router.get("/buscar/", response_model=ListaDocumentos)
 async def api_buscar_documentos_basico(
     q:str = Query (..., min_length=1, description = "Termino de busqueda para titulo o autor"),
@@ -26,8 +29,8 @@ async def api_buscar_documentos_basico(
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error interno en la busqueda básica: {str(e)}")
 
-# NOTA: Omití la búsqueda avanzada ya que la omitiste en tu main.py
 
+"Endpoint para listar categorias."
 @router_categorias.get("/", response_model=List[CategoriaConteo])
 async def api_listar_categorias(
     # CORRECCIÓN: Este endpoint estaba mal en tu main.py
@@ -41,6 +44,8 @@ async def api_listar_categorias(
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error interno al listar las categorias: {str(e)}")
 
+
+"Endpoint para listar documentos por categoria"
 @router_categorias.get("/{categoria_nombre}/documentos/", response_model=ListaDocumentos)
 async def api_listar_documentos_por_categoria(
     categoria_nombre: str,

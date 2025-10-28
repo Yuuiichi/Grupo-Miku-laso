@@ -25,10 +25,10 @@ def listar_documentos(page: int, size: int) -> Tuple[List[dict], int]:
         total_items = cur.fetchone()[0]
 
         cur.execute(query_data, (size, offset))
-        rows = cur.fetchall() # CORRECCIÓN: Tu main.py usaba 'columnas' aquí
+        rows = cur.fetchall() 
 
         columnas_f= [desc[0] for desc in cur.description]
-        documentos = [dict(zip(columnas_f, row)) for row in rows] # CORRECCIÓN: Tu main.py usaba 'columna'
+        documentos = [dict(zip(columnas_f, row)) for row in rows] 
 
         return documentos, total_items
     except Exception as e:
@@ -44,7 +44,7 @@ def listar_documentos(page: int, size: int) -> Tuple[List[dict], int]:
 def busqueda_basica(busqueda: str, page:int, size:int) -> Tuple[List[dict], int]:
     conn = None
     offset = (page-1) * size
-    # CORRECCIÓN: Faltaba un % al final para buscar "contiene"
+    
     termino_ilike = f"%{busqueda}%" 
 
     query_data = """
@@ -63,10 +63,10 @@ def busqueda_basica(busqueda: str, page:int, size:int) -> Tuple[List[dict], int]
         cur = conn.cursor()
 
         cur.execute(query_count, (termino_ilike, termino_ilike))
-        # CORRECCIÓN: Typo 'futchone'
+        
         total_items = cur.fetchone()[0] 
 
-        # CORRECCIÓN: Estabas ejecutando query_count de nuevo, no query_data
+        
         cur.execute(query_data, (termino_ilike, termino_ilike, size, offset))
         rows = cur.fetchall()
 
@@ -121,7 +121,7 @@ def documento_por_categoria(categoria: str, page: int, size: int) -> Tuple[List[
         WHERE categoria = %s
         ORDER BY id
         LIMIT %s OFFSET %s;
-    """ # CORRECCIÓN: Faltaba LIMIT %s OFFSET %s en tu query
+    """
     query_count = """
         SELECT COUNT(*) FROM documento
         WHERE categoria = %s;
