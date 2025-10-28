@@ -3,9 +3,11 @@ from typing import Optional, List
 from schemas.documento_schema import (
     DocumentoCrear, DocumentoOutput, DocumentoActualizar, ListaDocumentos
 )
+
+from utils.auth import require_role
 # Importamos las funciones de los 'models' (que ahora son 'services')
 from models import documento_model, catalogo_model 
-from utils.dependencies import verificacion, validacion_categoria
+from utils.dependencies import validacion_categoria
 
 router = APIRouter()
 
@@ -14,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=DocumentoOutput)
 async def api_creacion_documentos(
     documento_data: DocumentoCrear, 
-    es_admin: bool = Depends(verificacion)
+    es_admin: bool = Depends(require_role(["admin"]))
 ):
     """Crea un nuevo documento."""
     print(f"los datos recibidos fueron los siguientes:{documento_data.model_dump()}")
@@ -75,7 +77,7 @@ async def api_get_documento(documento_id: int):
 async def api_actualizar_documento(
     documento_id: int, 
     documento_data: DocumentoActualizar, 
-    es_admin: bool = Depends(verificacion)
+    es_admin: bool = Depends(require_role(["admin"]))
 ):
     """Actualiza parcialmente un documento por su ID."""
     datos_a_actualizar = documento_data.model_dump(exclude_unset=True)
