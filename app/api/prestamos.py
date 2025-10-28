@@ -6,6 +6,7 @@ from app.models.ejemplar import Ejemplar
 from app.utils.dates import calcular_fecha_devolucion
 from app.schemas.prestamo import PrestamoCreate, PrestamoResponse
 from app.database import get_db
+from typing import List
 
 router = APIRouter(prefix="/prestamos", tags=["Prestamos"])
 
@@ -78,3 +79,94 @@ def listar_prestamos_activos(
     prestamos = query.order_by(Prestamo.fecha_prestamo.desc()).offset(offset).limit(size).all()
 
     return prestamos
+
+@router.get("/vencidos", response_model=List[PrestamoResponse])
+def listar_prestamos_vencidos(db: Session = Depends(get_db)):
+
+    '''
+    Lista los préstamos a domicilio que han vencido y actualiza su estado a "vencido".
+    '''
+
+    hoy = datetime.now()
+    prestamos = (
+        db.query(Prestamo)
+        .filter(
+            Prestamo.tipo_prestamo == "domicilio",
+            Prestamo.fecha_devolucion_estimada < hoy,
+            Prestamo.estado == "activo"
+        )
+        .order_by(Prestamo.fecha_devolucion_estimada.asc())
+        .all()
+    )
+
+    for p in prestamos:
+        p.estado = "vencido"
+    
+    db.commit()
+
+    return prestamos
+
+@router.get("/sala-vencidos", response_model=List[PrestamoResponse])
+def listar_prestamos_sala_vencidos(db: Session = Depends(get_db)):
+
+    '''
+    Lista los préstamos en sala que han vencido y actualiza su estado a "vencido".
+    '''
+
+    hoy = datetime.now()
+    prestamos = (
+        db.query(Prestamo)
+        .filter(
+            Prestamo.tipo_prestamo == "sala",
+            Prestamo.fecha_devolucion_estimada < hoy,
+            Prestamo.estado == "activo"
+        )
+        .order_by(Prestamo.fecha_devolucion_estimada.asc())
+        .all()
+    )
+
+    for p in prestamos:
+        p.estado = "vencido"
+    
+    db.commit()
+
+    return prestamos
+
+@router.patch("/{prestamo_id}/notificado")
+def marcar_notificado(prestamo_id: int, db: Session = Depends(get_db)):
+
+    '''
+    
+    '''
+
+    prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
+    if not prestamo:
+        raise HTTPException(status_code=404, detail="Préstamo no encontrado.")
+    
+    if prestamo.estado != "vencido":
+        raise HTTPException(status_code=400, detail="Solo se pueden notificar préstamos vencidos.")
+    
+    prestamo.notificado = True
+    db.commit()
+
+    return {"mensaje": f"Préstamo {prestamo_id} marcado como notificado."}
+
+@router.post("/notificar-vencidos")
+def verificacion_actualizacion_vencimientos(db: Session = Depends(get_db)):
+
+    '''
+    
+    '''
+
+    hoy = datetime.now()
+    vencidos = bd.query(Prestamo).filter(
+        Prestamo.estado == "activo",
+        Prestamo.fecha_devolucion_estimada < hoy
+    ).all()
+
+    for prestamo in vencidos:
+        prestamo.estado = "vencido"
+    
+    db.commit()
+
+    return {"mensaje": f"Se actualizaron {len(vencidos)} préstamos a vencido."}

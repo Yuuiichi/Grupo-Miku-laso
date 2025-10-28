@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeingKey, DateTime, Time, Enum
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
+import Boolean
 
 class TipoPrestamo(enum.Enum):
     sala = "sala"
@@ -26,6 +27,7 @@ class Prestamo(Base):
     fecha_devolucion_real = Column(DateTime, nullable=True)
     hora_devolucion_real = Column(Time, nullable=True)
     estado = Column(Enum(EstadoPrestamo), default=EstadoPrestamo.activo)
+    notificado = Column(Boolean, default=False)
 
     detalles = relationship("DetallePrestamo", back_populates="prestamo")
 

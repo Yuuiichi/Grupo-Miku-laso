@@ -16,3 +16,13 @@ def calcular_fecha_devolucion(tipo_prestamo: str, tipo_documento: str) -> dateti
             return ahora + timedelta(days=3)
     
     return ahora + timedelta(days=5)  # Valor por defecto si no coincide ningún caso
+
+def verificar_vencimiento(fecha_estimada) -> bool:
+
+    '''
+    Verifica si la fecha estimada de devolución ha sido superada.
+    '''
+
+    if not fecha_estimada:
+        return False
+    return datetime.now().date() > fecha_estimada.date()
