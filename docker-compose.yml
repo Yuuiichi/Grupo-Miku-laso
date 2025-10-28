@@ -1,7 +1,20 @@
+<<<<<<< HEAD
 services:
   postgres:
     image: postgres:15
     container_name: biblioteca_postgres
+=======
+version: '3.8'
+
+services:
+  # ============================================
+  # BASE DE DATOS POSTGRESQL
+  # ============================================
+  db:
+    image: postgres:15-alpine
+    container_name: biblioteca_db
+    restart: always
+>>>>>>> origin/Rol-5
     environment:
       POSTGRES_USER: biblioteca_user
       POSTGRES_PASSWORD: biblioteca_pass
@@ -10,6 +23,64 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+<<<<<<< HEAD
 
 volumes:
   postgres_data:
+=======
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biblioteca_user -d biblioteca_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # PGADMIN (Opcional - para administrar BD)
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: biblioteca_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@biblioteca.cl
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# ============================================
+# INSTRUCCIONES DE USO
+# ============================================
+# 1. Iniciar servicios:
+#    docker-compose up -d
+#
+# 2. Ver logs:
+#    docker-compose logs -f
+#
+# 3. Detener servicios:
+#    docker-compose down
+#
+# 4. Detener y eliminar volúmenes (CUIDADO - borra datos):
+#    docker-compose down -v
+#
+# 5. Acceder a PgAdmin:
+#    http://localhost:5050
+#    Email: admin@biblioteca.cl
+#    Password: admin123
+#
+# 6. Conectar PgAdmin a PostgreSQL:
+#    Host: db
+#    Port: 5432
+#    Username: biblioteca_user
+#    Password: biblioteca_pass
+#    Database: biblioteca_db
+>>>>>>> origin/Rol-5
