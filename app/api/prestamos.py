@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.prestamos import Prestamo, DetallePrestamo

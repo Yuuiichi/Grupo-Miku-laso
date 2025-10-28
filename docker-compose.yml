@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-services:
-  postgres:
-    image: postgres:15
-    container_name: biblioteca_postgres
-=======
 version: '3.8'
 
 services:
@@ -14,7 +8,6 @@ services:
     image: postgres:15-alpine
     container_name: biblioteca_db
     restart: always
->>>>>>> origin/Rol-5
     environment:
       POSTGRES_USER: biblioteca_user
       POSTGRES_PASSWORD: biblioteca_pass
@@ -23,11 +16,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-<<<<<<< HEAD
-
-volumes:
-  postgres_data:
-=======
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U biblioteca_user -d biblioteca_db"]
       interval: 10s
@@ -83,4 +71,3 @@ volumes:
 #    Username: biblioteca_user
 #    Password: biblioteca_pass
 #    Database: biblioteca_db
->>>>>>> origin/Rol-5

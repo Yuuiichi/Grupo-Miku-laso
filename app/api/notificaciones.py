@@ -320,7 +320,7 @@ def notificar_cambio_password(usuario_id: int, db: Session) -> bool:
     db.commit()
     
     return email_exitoso
- TODO: Obtener préstamos vencidos desde ROL 4
+    # TODO: Obtener préstamos vencidos desde ROL 4
     # from app.api.prestamos import obtener_prestamos_vencidos_agrupados
     # prestamos_vencidos = obtener_prestamos_vencidos_agrupados(db)
     

@@ -9,7 +9,7 @@ load_dotenv()
 # URL de conexión PostgreSQL
 # Formato: postgresql://usuario:password@host:puerto/nombre_bd
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",  # ESTO NO VA A FUNCIONAR, EDITAR PARA QUE FUNCIONE CON LA BASE DE DATOS CREADA
+    "DATABASE_URL", 
     "postgresql://biblioteca_user:biblioteca_pass@localhost:5432/biblioteca_db"
 )
 
