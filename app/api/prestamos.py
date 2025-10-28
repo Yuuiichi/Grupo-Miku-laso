@@ -4,7 +4,7 @@ from datetime import datetime
 from app.models.prestamos import Prestamo, DetallePrestamo
 from app.models.ejemplar import Ejemplar
 from app.utils.dates import calcular_fecha_devolucion
-from app.schemas.prestamo import PrestamoCreate, PrestamoResponse
+from app.schemas.prestamo import PrestamoCreate, PrestamoResponse, PrestamoStats
 from app.database import get_db
 from typing import List
 
@@ -17,9 +17,21 @@ def registrar_prestamo(data: PrestamoCreate, db: Session = Depends(get_db)):
     Registra un nuevo préstamo con sus detalles en el sistema.
     '''
 
-    puede_prestar = True
-    if not puede_prestar:
-        raise HTTPException(status_code=400, detail="El usuario no puede realizar más préstamos.")
+    activos_count = db.query(Prestamo).filter(
+        Prestamo.usuario_id == data.usuario_id,
+        Prestamo.estado == 'activo'
+    ).count()
+
+    tiene_vencidos = db.query(Prestamo).filter(
+        Prestamo.usuario_id == data.usuario_id,
+        Prestamo.estado == 'vencido'
+    ).count()
+
+    if activos_count >= 3:
+        raise HTTPException(status_code=400, detail=f"El usuario no puede realizar más préstamos, ya que tiene {activos_count} activos.")
+    
+    if tiene_vencidos > 0:
+        raise HTTPException(status_code=400, detail="El usuario tiene préstamos vencidos y no puede realizar nuevos préstamos.")
     
     ejemplares = db.query(Ejemplar).filter(Ejemplar.id.in_(data.ejemplar_ids)).all()
     if len(ejemplares) != len(data.ejemplar_ids):
@@ -136,7 +148,7 @@ def listar_prestamos_sala_vencidos(db: Session = Depends(get_db)):
 def marcar_notificado(prestamo_id: int, db: Session = Depends(get_db)):
 
     '''
-    
+    Marca un préstamo vencido como notificado.
     '''
 
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
@@ -155,11 +167,11 @@ def marcar_notificado(prestamo_id: int, db: Session = Depends(get_db)):
 def verificacion_actualizacion_vencimientos(db: Session = Depends(get_db)):
 
     '''
-    
+    Verifica y actualiza el estado de los préstamos vencidos a "vencido".
     '''
 
     hoy = datetime.now()
-    vencidos = bd.query(Prestamo).filter(
+    vencidos = db.query(Prestamo).filter(
         Prestamo.estado == "activo",
         Prestamo.fecha_devolucion_estimada < hoy
     ).all()
@@ -170,3 +182,56 @@ def verificacion_actualizacion_vencimientos(db: Session = Depends(get_db)):
     db.commit()
 
     return {"mensaje": f"Se actualizaron {len(vencidos)} préstamos a vencido."}
+
+@router.get("/usuarios/{usuario_id}/historial", response_model=List[PrestamoResponse])
+def historial_prestamos_usuario(
+    usuario_id: int,
+    estado: str = Query(None, description="Filtrar por estado: activo, vencido o devuelto"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=200),
+    db: Session = Depends(get_db)
+):
+    
+    '''
+    Obtiene el historial de préstamos de un usuario con opción de filtrar por estado y paginación.
+    '''
+
+    query = db.query(Prestamo).filter(Prestamo.usuario_id == usuario_id)
+
+    if estado:
+        query = query.filter(Prestamo.estado == estado)
+
+    offset = (page - 1) * size
+    prestamos = (
+        query.order_by(Prestamo.fecha_prestamo.desc())
+        .offset(offset)
+        .limit(size)
+        .all()
+    )
+
+    if not prestamos:
+        raise HTTPException(status_code=404, detail="No se encontraron préstamos para el usuario con los criterios especificados.")
+
+    return prestamos
+
+@router.get("/estadisticas", response_model=PrestamoStats)
+def estadisticas_prestamos(db: Session = Depends(get_db)):
+
+    '''
+    Obtiene estadísticas sobre los préstamos.
+    '''
+
+    total_activos = db.query(Prestamo).filter(Prestamo.estado == "activo").count()
+    total_vencidos = db.query(Prestamo).filter(Prestamo.estado == "vencido").count()
+    total_devueltos = db.query(Prestamo).filter(Prestamo.estado == "devuelto").count()
+
+    total_sala = db.query(Prestamo).filter(Prestamo.tipo_prestamo == "sala").count()
+    total_domicilio = db.query(Prestamo).filter(Prestamo.tipo_prestamo == "domicilio").count()
+
+    return PrestamoStats(
+        total_activos=total_activos,
+        total_vencidos=total_vencidos,
+        total_devueltos=total_devueltos,
+        total_sala=total_sala,
+        total_domicilio=total_domicilio
+    )

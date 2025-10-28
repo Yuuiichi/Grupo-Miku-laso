@@ -23,3 +23,10 @@ class PrestamoResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PrestamoStats(BaseModel):
+    total_activos: int
+    total_vencidos: int
+    total_devueltos: int
+    total_salas: int
+    total_domicilio: int
