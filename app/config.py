@@ -1,5 +1,6 @@
+# config.py
 from pydantic_settings import BaseSettings
-from datetime import timedelta
+from typing import List
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Sistema de Autenticación"
@@ -9,10 +10,20 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key-change-in-production-2024"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 horas
-    
     DATABASE_URL: str = "sqlite:///./app.db"
     
-    CORS_ORIGINS: list = [
+    # Añadir estos campos que están en tu archivo .env
+    SMTP_SERVER: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    FROM_EMAIL: str
+    FROM_NAME: str
+    BASE_URL: str
+    ENVIRONMENT: str
+    
+    # Para CORS
+    CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:4200"
