@@ -74,7 +74,7 @@ async def get_current_user(
     
     return usuario
 
-async def require_role(roles: list[str]):
+def require_role(roles: list[str]):
     """Decorator para requerir roles específicos"""
     async def role_checker(current_user: Usuario = Depends(get_current_user)):
         if current_user.rol not in roles:
