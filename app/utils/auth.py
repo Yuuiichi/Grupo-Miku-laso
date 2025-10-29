@@ -4,10 +4,10 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from config import settings
-from database import get_db
-from models.usuario import Usuario
-from schemas.usuario import TokenData
+from app.config import settings
+from app.database import get_db
+from app.models.usuario import Usuario
+from app.schemas.usuario import TokenData
 
 security = HTTPBearer()
 
@@ -74,8 +74,17 @@ async def get_current_user(
     
     return usuario
 
-async def require_role(roles: list[str]):
-    """Decorator para requerir roles específicos"""
+def require_role(roles: list[str]):
+    """
+    Dependency factory para requerir roles específicos.
+    
+    Uso:
+        @router.get("/admin-only")
+        async def admin_endpoint(
+            current_user: Usuario = Depends(require_role(["admin"]))
+        ):
+            ...
+    """
     async def role_checker(current_user: Usuario = Depends(get_current_user)):
         if current_user.rol not in roles:
             raise HTTPException(
