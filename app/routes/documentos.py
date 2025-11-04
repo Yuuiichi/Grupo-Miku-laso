@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
-from schemas.documento_schema import (
+from app.schemas.documento_schema import (
     DocumentoCrear, DocumentoOutput, DocumentoActualizar, ListaDocumentos
 )
 # Importamos las funciones de los 'models' (que ahora son 'services')
-from models import documento_model, catalogo_model 
-from utils.dependencies import verificacion, validacion_categoria
+from app.models import documento_model, catalogo_model 
+from app.utils.dependencies import verificacion, validacion_categoria
 
 router = APIRouter()
 

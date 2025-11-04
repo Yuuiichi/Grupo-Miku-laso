@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
-from schemas.documento_schema import (
+from app.schemas.documento_schema import (
     ListaDocumentos, CategoriaConteo
 )
-from models import catalogo_model # Importamos desde 'models'
+from app.models import catalogo_model # Importamos desde 'models'
 
 # Routers separados para mantener la lógica limpia
 router = APIRouter() # Para /catalogo

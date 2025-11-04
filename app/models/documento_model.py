@@ -1,4 +1,4 @@
-from database import connection
+from app.database import connection
 from fastapi import HTTPException
 from typing import Optional, Dict
 
