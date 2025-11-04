@@ -48,3 +48,19 @@ def create_tables():
     print(f"Tablas: {list(Base.metadata.tables.keys())}")
 
 
+def connection(): #Creeria que funciona igual que get_db, pero la uso para ROL 2.
+    """
+    Establece la conexión con la base de datos utilizando DATABASE_URL desde .env .
+    """
+    try:
+
+        database_url = os.getenv("DATABASE_URL")
+
+        print("Estableciendo conexión con la DB")
+        return psycopg2.connect(database_url)
+    
+    except Exception as e:
+        print(f"Error al conectar con la base de datos: {e}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor al conectar a la base de datos")
+
+
