@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import settings
-from database import engine, Base
-from routes import auth, admin
+from app.config import settings
+from app.database import engine, Base
+from app.routes import auth, admin, documentos, catalogo
+from app.api import ejemplares
+
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
@@ -26,6 +28,13 @@ app.add_middleware(
 # Registrar routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
+app.include_router(ejemplares.router, prefix=settings.API_V1_STR, tags=["Ejemplares"])
+#router = APIRouter(prefix="/ejemplares", tags=["Ejemplares"])
+
+#Routes ROL 2
+app.include_router(documentos.router, prefix="/documentos", tags=["Documentos"])
+app.include_router(catalogo.router, prefix="/catalogo", tags=["Catálogo"])
+app.include_router(catalogo.router_categorias, prefix="/categorias", tags=["Categorías"])
 
 @app.get("/health")
 def health_check():

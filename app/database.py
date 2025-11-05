@@ -9,7 +9,7 @@ load_dotenv()
 # URL de conexión PostgreSQL
 # Formato: postgresql://usuario:password@host:puerto/nombre_bd
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",  # ESTO NO VA A FUNCIONAR, EDITAR PARA QUE FUNCIONE CON LA BASE DE DATOS CREADA
+    "DATABASE_URL",
     "postgresql://biblioteca_user:biblioteca_pass@localhost:5432/biblioteca_db"
 )
 
@@ -21,6 +21,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class para los modelos
 Base = declarative_base()
+
 
 # Dependency para FastAPI
 def get_db():
@@ -41,7 +42,12 @@ def create_tables():
     Crear todas las tablas en la BD.
     Ejecutar una vez al inicio.
     """
+    # Importar todos los modelos para que SQLAlchemy los registre
+    from app.models.usuario import Usuario
+    from app.models.documento import Documento
+    from app.models.ejemplar import Ejemplar
+    # Importa aquí cualquier otro modelo que tengas
+
     Base.metadata.create_all(bind=engine)
     print("✅ Tablas creadas exitosamente")
-
-
+    print(f"Tablas: {list(Base.metadata.tables.keys())}")
