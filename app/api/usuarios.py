@@ -7,7 +7,7 @@ from app.models.usuario import Usuario
 from app.models.token_validacion import TokenValidacion
 from app.schemas.usuario import UsuarioCreate, UsuarioResponse, UsuarioUpdate
 from app.utils.auth import get_current_user, require_role
-from app.utils.validators import validar_rut, formatear_rut
+from app.utils.validations import validar_rut, formatear_rut
 from app.services.email_service import email_service
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])

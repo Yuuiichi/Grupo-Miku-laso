@@ -1,111 +1,224 @@
-from app.database import connection
+from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from typing import Optional, Dict
+from typing import Optional
+from app.models.documento import Documento
 
 # --- LÓGICA DE BD PARA EL RECURSO 'Documentos' (CRUD) ---
-# (Funciones movidas desde main.py)
+# Refactorizado para usar SQLAlchemy ORM en lugar de psycopg2
 
-def ingresar_documento(data: dict) -> int:
-    conn = None
-    query = """
-    INSERT INTO documento (tipo, titulo, autor, editorial, anio, edicion, categoria, tipo_medio)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    RETURNING id;
+def ingresar_documento(db: Session, data: dict) -> Documento:
     """
-    values = (
-        data.get('tipo'), data.get('titulo'), data.get('autor'),
-        data.get('editorial'), data.get('anio'), data.get('edicion'),
-        data.get('categoria'), data.get('tipo_medio')
-    )
+    Crea un nuevo documento en la BD usando SQLAlchemy.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        data: Diccionario con los datos del documento
+    
+    Returns:
+        Documento: El objeto Documento creado
+    """
     try:
-        conn = connection()
-        cur = conn.cursor()
-        cur.execute(query, values)
-        nuevo_id = cur.fetchone()[0]
-        conn.commit()
-        print(f"Ingreso a la bd correcto, nuevo ID: {nuevo_id}")
-        return nuevo_id
+        nuevo_documento = Documento(
+            tipo=data.get('tipo'),
+            titulo=data.get('titulo'),
+            autor=data.get('autor'),
+            editorial=data.get('editorial'),
+            año=data.get('anio'),  # Nota: 'anio' en data, 'año' en modelo
+            edicion=data.get('edicion'),
+            categoria=data.get('categoria'),
+            tipo_medio=data.get('tipo_medio')
+        )
+        
+        db.add(nuevo_documento)
+        db.commit()
+        db.refresh(nuevo_documento)
+        
+        print(f"Ingreso a la bd correcto, nuevo ID: {nuevo_documento.id}")
+        return nuevo_documento
+    
     except Exception as e:
         print(f"Error en DB (ingresar_documento): {e}")
-        if conn: conn.rollback()
-        raise HTTPException(status_code=500, detail="Error interno al crear el documento")
-    finally:
-        if conn:
-            cur.close()
-            conn.close()
-            print("Conexión a la BD cerrada")
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno al crear el documento: {str(e)}"
+        )
 
-def busqueda_por_id(documento_id: int) -> Optional[dict]:
-    conn = None
-    # CORRECCIÓN: 'editorial' estaba mal escrito en tu main.py ('editoria')
-    query = """
-        SELECT id, tipo, titulo, autor, editorial, anio, edicion, categoria, tipo_medio
-        FROM documento
-        WHERE id = %s;
+
+def busqueda_por_id(db: Session, documento_id: int) -> Optional[Documento]:
+    """
+    Busca un documento por su ID.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        documento_id: ID del documento a buscar
+    
+    Returns:
+        Documento o None si no existe
     """
     try:
-        conn = connection()
-        cur = conn.cursor()
-        cur.execute(query, (documento_id,))
-        row = cur.fetchone()
-
-        if row is None:
-            return None
+        documento = db.query(Documento).filter(
+            Documento.id == documento_id,
+            Documento.activo == True
+        ).first()
         
-        columnas = [desc[0] for desc in cur.description]
-        documento = dict(zip(columnas, row))
         return documento
     
     except Exception as e:
         print(f"Error en DB (busqueda_por_id): {e}")
-        raise HTTPException(status_code=500, detail="Error interno al buscar documento por ID")
-    finally:
-        if conn:
-            cur.close()
-            conn.close()
-            print("Conexión a la BD cerrada.")
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno al buscar documento por ID"
+        )
 
-def actualizar_documento(id: int, data: dict) -> Optional[dict]:
-    conn = None
-    set_clauses =[]
-    params =[]
-    
-    for key, value in data.items():
-        set_clauses.append(f"{key} = %s")
-        params.append(value)
-    
-    set_query = ", ".join(set_clauses)
-    params.append(id) # Añade el ID al final para el WHERE
 
-    query_modify =f"""
-        UPDATE documento
-        SET {set_query}
-        WHERE id = %s
-        RETURNING id, tipo, titulo, autor, editorial, anio, edicion, categoria, tipo_medio;
+def actualizar_documento(db: Session, id: int, data: dict) -> Optional[Documento]:
     """
+    Actualiza un documento existente.
     
+    Args:
+        db: Sesión de SQLAlchemy
+        id: ID del documento a actualizar
+        data: Diccionario con los campos a actualizar
+    
+    Returns:
+        Documento actualizado o None si no existe
+    """
     try:
-        conn = connection()
-        cur = conn.cursor()
-        cur.execute(query_modify, tuple(params))
-        row = cur.fetchone()
-
-        # Si fetchone() no devuelve nada, el ID no existía
-        if row is None:
+        documento = db.query(Documento).filter(Documento.id == id).first()
+        
+        if documento is None:
             return None
         
-        conn.commit()
-        columnas = [desc[0] for desc in cur.description]
-        documento_actualizado = dict(zip(columnas,row))
+        # Actualizar solo los campos que vienen en data
+        for key, value in data.items():
+            # Mapear 'anio' a 'año' si es necesario
+            field_name = 'año' if key == 'anio' else key
+            
+            if hasattr(documento, field_name):
+                setattr(documento, field_name, value)
         
-        return documento_actualizado
+        db.commit()
+        db.refresh(documento)
+        
+        print(f"Documento {id} actualizado exitosamente")
+        return documento
     
     except Exception as e:
         print(f"Error en DB (actualizar_documento): {e}")
-        if conn: conn.rollback()
-        raise HTTPException(status_code=500, detail="Error interno al actualizar el documento")
-    finally:
-        if conn:
-            cur.close()
-            conn.close()
-            print("Conexión con la BD cerrada.")
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno al actualizar el documento"
+        )
+
+
+def eliminar_documento(db: Session, id: int) -> bool:
+    """
+    Elimina (desactiva) un documento.
+    Eliminación lógica: solo marca activo=False.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        id: ID del documento a eliminar
+    
+    Returns:
+        True si se eliminó, False si no existía
+    """
+    try:
+        documento = db.query(Documento).filter(Documento.id == id).first()
+        
+        if documento is None:
+            return False
+        
+        documento.activo = False
+        db.commit()
+        
+        print(f"Documento {id} marcado como inactivo")
+        return True
+    
+    except Exception as e:
+        print(f"Error en DB (eliminar_documento): {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno al eliminar el documento"
+        )
+
+
+def listar_documentos(
+    db: Session, 
+    tipo: Optional[str] = None,
+    categoria: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100
+) -> list[Documento]:
+    """
+    Lista documentos con filtros opcionales.
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        tipo: Filtrar por tipo (libro, audio, video, revista)
+        categoria: Filtrar por categoría
+        skip: Número de registros a saltar (paginación)
+        limit: Número máximo de registros a devolver
+    
+    Returns:
+        Lista de Documentos
+    """
+    try:
+        query = db.query(Documento).filter(Documento.activo == True)
+        
+        if tipo:
+            query = query.filter(Documento.tipo == tipo)
+        
+        if categoria:
+            query = query.filter(Documento.categoria == categoria)
+        
+        documentos = query.offset(skip).limit(limit).all()
+        
+        return documentos
+    
+    except Exception as e:
+        print(f"Error en DB (listar_documentos): {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno al listar documentos"
+        )
+
+
+def buscar_documentos(
+    db: Session,
+    termino: str,
+    skip: int = 0,
+    limit: int = 100
+) -> list[Documento]:
+    """
+    Busca documentos por título o autor (búsqueda parcial).
+    
+    Args:
+        db: Sesión de SQLAlchemy
+        termino: Término de búsqueda
+        skip: Número de registros a saltar
+        limit: Número máximo de registros
+    
+    Returns:
+        Lista de Documentos que coinciden
+    """
+    try:
+        termino_busqueda = f"%{termino}%"
+        
+        documentos = db.query(Documento).filter(
+            Documento.activo == True,
+            (Documento.titulo.ilike(termino_busqueda) | 
+             Documento.autor.ilike(termino_busqueda))
+        ).offset(skip).limit(limit).all()
+        
+        return documentos
+    
+    except Exception as e:
+        print(f"Error en DB (buscar_documentos): {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno al buscar documentos"
+        )

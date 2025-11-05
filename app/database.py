@@ -22,6 +22,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base class para los modelos
 Base = declarative_base()
 
+
 # Dependency para FastAPI
 def get_db():
     """
@@ -41,26 +42,12 @@ def create_tables():
     Crear todas las tablas en la BD.
     Ejecutar una vez al inicio.
     """
-    import app.models
+    # Importar todos los modelos para que SQLAlchemy los registre
+    from app.models.usuario import Usuario
+    from app.models.documento import Documento
+    from app.models.ejemplar import Ejemplar
+    # Importa aquí cualquier otro modelo que tengas
 
     Base.metadata.create_all(bind=engine)
     print("✅ Tablas creadas exitosamente")
     print(f"Tablas: {list(Base.metadata.tables.keys())}")
-
-
-def connection(): #Creeria que funciona igual que get_db, pero la uso para ROL 2.
-    """
-    Establece la conexión con la base de datos utilizando DATABASE_URL desde .env .
-    """
-    try:
-
-        database_url = os.getenv("DATABASE_URL")
-
-        print("Estableciendo conexión con la DB")
-        return psycopg2.connect(database_url)
-    
-    except Exception as e:
-        print(f"Error al conectar con la base de datos: {e}")
-        raise HTTPException(status_code=500, detail="Error interno del servidor al conectar a la base de datos")
-
-

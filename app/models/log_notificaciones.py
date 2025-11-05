@@ -20,7 +20,7 @@ class LogNotificacion(Base):
     fecha_envio = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Metadata adicional (JSON como texto)
-    metadata = Column(Text, nullable=True)
+    metadata_name = Column(Text, nullable=True)
     
     # Relación con usuario
     # usuario = relationship("Usuario", back_populates="notificaciones")
