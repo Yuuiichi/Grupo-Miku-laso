@@ -9,7 +9,7 @@ load_dotenv()
 # URL de conexión PostgreSQL
 # Formato: postgresql://usuario:password@host:puerto/nombre_bd
 DATABASE_URL = os.getenv(
-    "DATABASE_URL",  # ESTO NO VA A FUNCIONAR, EDITAR PARA QUE FUNCIONE CON LA BASE DE DATOS CREADA
+    "DATABASE_URL",
     "postgresql://biblioteca_user:biblioteca_pass@localhost:5432/biblioteca_db"
 )
 
@@ -41,5 +41,26 @@ def create_tables():
     Crear todas las tablas en la BD.
     Ejecutar una vez al inicio.
     """
+    import app.models
+
     Base.metadata.create_all(bind=engine)
     print("✅ Tablas creadas exitosamente")
+    print(f"Tablas: {list(Base.metadata.tables.keys())}")
+
+
+def connection(): #Creeria que funciona igual que get_db, pero la uso para ROL 2.
+    """
+    Establece la conexión con la base de datos utilizando DATABASE_URL desde .env .
+    """
+    try:
+
+        database_url = os.getenv("DATABASE_URL")
+
+        print("Estableciendo conexión con la DB")
+        return psycopg2.connect(database_url)
+    
+    except Exception as e:
+        print(f"Error al conectar con la base de datos: {e}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor al conectar a la base de datos")
+
+

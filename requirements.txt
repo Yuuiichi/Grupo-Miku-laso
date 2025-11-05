@@ -1,4 +1,9 @@
 # ============================================
+# SISTEMA DE BIBLIOTECA MUNICIPAL
+# Python 3.10+
+# ============================================
+
+# ============================================
 # CORE FRAMEWORK
 # ============================================
 fastapi==0.104.1
@@ -6,7 +11,7 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
 # ============================================
-# DATABASE
+# DATABASE & ORM
 # ============================================
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
@@ -17,19 +22,19 @@ alembic==1.12.1
 # ============================================
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# ============================================
+# CONFIGURATION & ENVIRONMENT
+# ============================================
 python-dotenv==1.0.0
+pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # ============================================
-# EMAIL
+# EMAIL & NOTIFICATIONS
 # ============================================
-# Para envío de correos
 aiosmtplib==3.0.1
-
-# ============================================
-# VALIDATION
-# ============================================
-pydantic==2.5.0
 email-validator==2.1.0
 
 # ============================================
@@ -38,19 +43,24 @@ email-validator==2.1.0
 python-dateutil==2.8.2
 
 # ============================================
-# DEVELOPMENT (opcional)
+# TESTING (opcional - instalar aparte si necesitas)
 # ============================================
 # pytest==7.4.3
 # pytest-asyncio==0.21.1
+# pytest-cov==4.1.0
 # httpx==0.25.2
-# black==23.11.0
-# flake8==6.1.0
+# requests==2.31.0
 
 # ============================================
 # NOTAS
 # ============================================
 # Instalar con: pip install -r requirements.txt
-# Crear entorno virtual primero:
-#   python -m venv venv
-#   source venv/bin/activate  (Linux/Mac)
-#   venv\Scripts\activate     (Windows)
+# 
+# Para testing adicional:
+# pip install pytest pytest-asyncio httpx requests
+#
+# Verificar instalación:
+# pip list
+#
+# Actualizar todas las dependencias:
+# pip install --upgrade -r requirements.txt

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from database import get_db
-from models.usuario import Usuario
-from utils.auth import get_current_user, require_role
+from app.database import get_db
+from app.models.usuario import Usuario
+from app.utils.auth import get_current_user, require_role
 from typing import Optional
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
