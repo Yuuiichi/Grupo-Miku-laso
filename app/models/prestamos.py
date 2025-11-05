@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeingKey, DateTime, Time, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Time, Enum, Boolean
 from sqlalchemy.orm import relationship
-from database import Base
+from app.database import Base
 import enum
-import Boolean
 
 class TipoPrestamo(enum.Enum):
     sala = "sala"
@@ -14,7 +13,7 @@ class EstadoPrestamo(enum.Enum):
     vencido = "vencido"
 
 class Prestamo(Base): 
-    __tblename__ = "prestamos"
+    __tablename__ = "prestamos"
 
     id = Column(Integer, primary_key=True, index=True)
     tipo_prestamo = Column(Enum(TipoPrestamo), nullable=False)

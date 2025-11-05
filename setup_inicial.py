@@ -16,6 +16,8 @@ from app.database import SessionLocal
 from app.models.usuario import Usuario
 from app.models.documento import Documento
 from app.models.ejemplar import Ejemplar
+from app.models.biblioteca import Biblioteca
+from app.models.prestamos import Prestamo
 
 db = SessionLocal()
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.prestamos import Prestamo, DetallePrestamo
@@ -6,7 +6,7 @@ from app.models.ejemplar import Ejemplar
 from app.utils.dates import calcular_fecha_devolucion
 from app.schemas.prestamo import PrestamoCreate, PrestamoResponse, PrestamoStats
 from app.database import get_db
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/prestamos", tags=["Prestamos"])
 

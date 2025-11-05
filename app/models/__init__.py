@@ -18,7 +18,7 @@ except ImportError:
 
 # ROL 4
 try:
-    from app.models.prestamo import Prestamo
+    from app.models.prestamos import Prestamo
 except ImportError:
     pass
 

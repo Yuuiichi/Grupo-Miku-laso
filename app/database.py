@@ -46,6 +46,8 @@ def create_tables():
     from app.models.usuario import Usuario
     from app.models.documento import Documento
     from app.models.ejemplar import Ejemplar
+    from app.models.prestamos import Prestamo
+    from app.models.biblioteca import Biblioteca
     # Importa aquí cualquier otro modelo que tengas
 
     Base.metadata.create_all(bind=engine)

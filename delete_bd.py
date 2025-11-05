@@ -9,6 +9,8 @@ print("🗑️  Eliminando todas las tablas...")
 from app.models.usuario import Usuario
 from app.models.documento import Documento
 from app.models.ejemplar import Ejemplar
+from app.models.biblioteca import Biblioteca
+from app.models.prestamos import Prestamo
 
 Base.metadata.drop_all(bind=engine)
 print("✅ Tablas eliminadas")
