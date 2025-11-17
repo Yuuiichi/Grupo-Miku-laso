@@ -342,7 +342,6 @@ def obtener_disponibilidad(documento_id: int, db: Session = Depends(get_db)):
         total=len(ejemplares),
         puede_solicitar=disponibles > 0
     )
-    return ejemplares
 
 
 # ============================================

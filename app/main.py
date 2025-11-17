@@ -35,9 +35,9 @@ app.include_router(prestamos.router, prefix=settings.API_V1_STR)
 
 
 #Routes ROL 2
-app.include_router(documentos.router, prefix="/documentos", tags=["Documentos"])
-app.include_router(catalogo.router, prefix="/catalogo", tags=["Catálogo"])
-app.include_router(catalogo.router_categorias, prefix="/categorias", tags=["Categorías"])
+app.include_router(documentos.router, prefix=f"{settings.API_V1_STR}/documentos", tags=["Documentos"])
+app.include_router(catalogo.router, prefix=f"{settings.API_V1_STR}/catalogo", tags=["Catálogo"])
+app.include_router(catalogo.router_categorias, prefix=f"{settings.API_V1_STR}/categorias", tags=["Categorías"])
 
 @app.get("/health")
 def health_check():

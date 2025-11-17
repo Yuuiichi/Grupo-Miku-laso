@@ -3,6 +3,9 @@ from typing import Optional, List
 from app.schemas.documento_schema import (
     DocumentoCrear, DocumentoOutput, DocumentoActualizar, ListaDocumentos
 )
+from sqlalchemy.orm import Session
+from app.database import get_db
+
 # Importamos las funciones de los 'models' (que ahora son 'services')
 from app.models import documento_model, catalogo_model 
 from app.utils.dependencies import verificacion, validacion_categoria
@@ -33,11 +36,12 @@ async def api_creacion_documentos(
 @router.get("/", response_model=ListaDocumentos)
 async def api_listar_documentos(
     page: int = Query(1, ge=1), 
-    size: int = Query(10, ge=1, le=100)
+    size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
 ):
     """Lista todos los documentos (paginado)."""
     try:
-        documentos_list, total = catalogo_model.listar_documentos(page=page, size=size)
+        documentos_list, total = catalogo_model.listar_documentos(db=db, page=page, size=size)
         return ListaDocumentos(
             total_items=total,
             items=documentos_list
